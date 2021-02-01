@@ -33,4 +33,16 @@ public interface ManageService {
     List<BaseAttrInfo> getAttrInfoList(Long category1Id, Long category2Id, Long category3Id);
 
 
+    /**
+     * 保存平台商品属性及商品属性值
+     * @param baseAttrInfo  前台接收的JSON
+     */
+    void saveAttrInfo(BaseAttrInfo baseAttrInfo);
+
+    /**
+     * 根据id查询AttrInfo 和 单个AttrInfo 对应的多个AttrInfoValue
+     * @param attrId
+     * @return
+     */
+    BaseAttrInfo getAttrInfo(Long attrId);
 }

@@ -1,14 +1,12 @@
 package com.atguigu.gmall.product.service.impl;
 
-import com.atguigu.gmall.model.product.BaseAttrInfo;
-import com.atguigu.gmall.model.product.BaseCategory1;
-import com.atguigu.gmall.model.product.BaseCategory2;
-import com.atguigu.gmall.model.product.BaseCategory3;
+import com.atguigu.gmall.model.product.*;
 import com.atguigu.gmall.product.mapper.*;
 import com.atguigu.gmall.product.service.ManageService;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -58,4 +56,49 @@ public class ManageServiceImpl implements ManageService {
        List<BaseAttrInfo> baseAttrInfoList = baseAttrInfoMapper.selectBaseAttrInfoList(category1Id, category2Id, category3Id);
         return baseAttrInfoList;
     }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void saveAttrInfo(BaseAttrInfo baseAttrInfo) {
+
+        if (baseAttrInfo.getId() != null){
+            //如果有此属性，则执行修改
+            baseAttrInfoMapper.updateById(baseAttrInfo);
+        }else {
+            //向base_attr_info 添加数据
+            baseAttrInfoMapper.insert(baseAttrInfo);
+        }
+
+        //先全部删除平台商品属性值 然后再添加
+        QueryWrapper<BaseAttrValue> baseAttrValueQueryWrapper = new QueryWrapper<>();
+        baseAttrValueQueryWrapper.eq("attr_id", baseAttrInfo.getId());
+        baseAttrValueMapper.delete(baseAttrValueQueryWrapper);
+
+        //向base_attr_value 添加数据
+        List<BaseAttrValue> attrValueList = baseAttrInfo.getAttrValueList();
+        if (attrValueList != null && attrValueList.size() != 0){
+            for (BaseAttrValue baseAttrValue : attrValueList) {
+                //获取平台属性值id 给attrId
+                baseAttrValue.setAttrId(baseAttrInfo.getId());
+                baseAttrValueMapper.insert(baseAttrValue);
+            }
+        }
+
+    }
+
+    @Override
+    public BaseAttrInfo getAttrInfo(Long attrId) {
+        BaseAttrInfo baseAttrInfo = baseAttrInfoMapper.selectById(attrId);
+        if (baseAttrInfo != null) {
+            QueryWrapper<BaseAttrValue> baseAttrValueQueryWrapper = new QueryWrapper<>();
+            baseAttrValueQueryWrapper.eq("attr_id", attrId);
+            List<BaseAttrValue> baseAttrValues = baseAttrValueMapper.selectList(baseAttrValueQueryWrapper);
+
+
+            baseAttrInfo.setAttrValueList(baseAttrValues);
+        }
+        return baseAttrInfo;
+    }
+
+
 }

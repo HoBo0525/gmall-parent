@@ -1,10 +1,7 @@
 package com.atguigu.gmall.product.controller;
 
 import com.atguigu.gmall.common.result.Result;
-import com.atguigu.gmall.model.product.BaseAttrInfo;
-import com.atguigu.gmall.model.product.BaseCategory1;
-import com.atguigu.gmall.model.product.BaseCategory2;
-import com.atguigu.gmall.model.product.BaseCategory3;
+import com.atguigu.gmall.model.product.*;
 import com.atguigu.gmall.product.service.ManageService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -22,7 +19,6 @@ import java.util.List;
 @RestController
 @Slf4j
 @RequestMapping("admin/product")
-@CrossOrigin
 public class BaseManageController {
     @Autowired
     ManageService manageService;
@@ -49,12 +45,26 @@ public class BaseManageController {
     }
 
     @ApiOperation("查询商品平台属性")
-    @GetMapping("getAttrInfo/{category1Id}/{category2Id}/{category3Id}")
-    public Result<List<BaseAttrInfo>> getAttrInfo(@PathVariable Long category1Id,
+    @GetMapping("attrInfoList/{category1Id}/{category2Id}/{category3Id}")
+    public Result<List<BaseAttrInfo>> attrInfoList(@PathVariable Long category1Id,
                                                   @PathVariable Long category2Id,
                                                   @PathVariable Long category3Id){
-        List<BaseAttrInfo> attrInfoList = manageService.getAttrInfoList(category1Id, category2Id, category3Id);
-        return Result.ok(attrInfoList);
+        List<BaseAttrInfo> baseAttrInfoList = manageService.getAttrInfoList(category1Id, category2Id, category3Id);
+        return Result.ok(baseAttrInfoList);
     }
 
+    @ApiOperation("保存平台属性")
+    @PostMapping("saveAttrInfo")
+    public Result saveAttrInfo(@RequestBody BaseAttrInfo baseAttrInfo){
+        manageService.saveAttrInfo(baseAttrInfo);
+        return Result.ok();
+    }
+
+    @ApiOperation("显示平台属性值")
+    @GetMapping("getAttrValueList/{attrId}")
+    public Result<List<BaseAttrValue>> getAttrValueList(@PathVariable Long attrId){
+        BaseAttrInfo baseAttrInfo = manageService.getAttrInfo(attrId);
+        List<BaseAttrValue> attrValueList = baseAttrInfo.getAttrValueList();
+        return  Result.ok(attrValueList);
+    }
 }
