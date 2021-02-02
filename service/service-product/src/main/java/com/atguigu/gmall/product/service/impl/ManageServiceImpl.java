@@ -30,6 +30,14 @@ public class ManageServiceImpl implements ManageService {
     BaseAttrValueMapper baseAttrValueMapper;
     @Autowired
     SpuInfoMapper spuInfoMapper;
+    @Autowired
+    BaseSaleAttrMapper baseSaleAttrMapper;
+    @Autowired
+    SpuImageMapper spuImageMapper;
+    @Autowired
+    SpuSaleAttrMapper spuSaleAttrMapper;
+    @Autowired
+    SpuSaleAttrValueMapper spuSaleAttrValueMapper;
 
 
 
@@ -114,6 +122,47 @@ public class ManageServiceImpl implements ManageService {
         IPage<SpuInfo> spuInfoPageList = spuInfoMapper.selectPage(pageParam, spuInfoQueryWrapper);
         return spuInfoPageList;
 
+
+    }
+
+    @Override
+    public List<BaseSaleAttr> baseSaleAttrList() {
+        List<BaseSaleAttr> baseSaleAttrList = baseSaleAttrMapper.selectList(null);
+        return  baseSaleAttrList;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void saveSpuInfo(SpuInfo spuInfo) {
+        //保存spu商品
+        spuInfoMapper.insert(spuInfo);
+
+        //保存商品图片
+        List<SpuImage> spuImageList = spuInfo.getSpuImageList();
+        if (spuImageList.size() != 0 && spuImageList != null){
+            for (SpuImage spuImage : spuImageList) {
+                spuImage.setSpuId(spuInfo.getId());
+                spuImageMapper.insert(spuImage);
+            }
+        }
+
+        //保存 销售属性和 销售属性值
+        List<SpuSaleAttr> spuSaleAttrList = spuInfo.getSpuSaleAttrList();
+        if (spuSaleAttrList.size() != 0 && spuSaleAttrList != null){
+            for (SpuSaleAttr spuSaleAttr : spuSaleAttrList) {
+                spuSaleAttr.setSpuId(spuInfo.getId());
+                spuSaleAttrMapper.insert(spuSaleAttr);
+
+                List<SpuSaleAttrValue> spuSaleAttrValueList = spuSaleAttr.getSpuSaleAttrValueList();
+                if (spuSaleAttrValueList.size() != 0 && spuSaleAttrValueList != null){
+                    for (SpuSaleAttrValue spuSaleAttrValue : spuSaleAttrValueList) {
+                        spuSaleAttrValue.setSpuId(spuSaleAttr.getSpuId());
+                        spuSaleAttrValue.setSaleAttrName(spuSaleAttr.getSaleAttrName());
+                        spuSaleAttrValueMapper.insert(spuSaleAttrValue);
+                    }
+                }
+            }
+        }
 
     }
 

@@ -52,4 +52,16 @@ public interface ManageService {
      * @return
      */
     IPage<SpuInfo> getSpuInfoPage(Page<SpuInfo> pageParam, SpuInfo spuInfo);
+
+    /**
+     * 获取所有销售属性
+     * @return
+     */
+    List<BaseSaleAttr> baseSaleAttrList();
+
+    /**
+     * 保存spu商品
+     * @param spuInfo
+     */
+    void saveSpuInfo(SpuInfo spuInfo);
 }
