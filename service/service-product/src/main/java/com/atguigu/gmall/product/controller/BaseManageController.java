@@ -3,6 +3,8 @@ package com.atguigu.gmall.product.controller;
 import com.atguigu.gmall.common.result.Result;
 import com.atguigu.gmall.model.product.*;
 import com.atguigu.gmall.product.service.ManageService;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
@@ -67,4 +69,7 @@ public class BaseManageController {
         List<BaseAttrValue> attrValueList = baseAttrInfo.getAttrValueList();
         return  Result.ok(attrValueList);
     }
+
+
+
 }
