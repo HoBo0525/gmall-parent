@@ -32,7 +32,7 @@ public class FileUploadController {
     public Result fileUpload(MultipartFile file){
           /*
             1.  读取到tracker.conf 文件
-            2.  初始化FastDFS
+            2.  初始化FastDFS(ClientGlobal)
             3.  创建对应的TrackerClient,TrackerServer
             4.  创建一个StorageClient，调用文件上传方法
             5.  获取到文件上传的url 并返回
@@ -68,6 +68,7 @@ public class FileUploadController {
 
         //  将文件的整体全路径放入data 中
         //  http://192.168.200.128:8080/group1/M00/00/02/wKjIgF_GZBqEKKqDAAAAAIyTSXk606.png
+        System.out.println(fileUrl + path);
         return Result.ok(fileUrl + path);
     }
 }
