@@ -4,7 +4,9 @@ import com.atguigu.gmall.model.product.*;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author Hobo
@@ -103,4 +105,40 @@ public interface ManageService {
      * @param skuId
      */
     void cancelSale(Long skuId);
+
+    /**
+     * 根据skuId 查询skuInfo以及skuImageList
+     * @param skuId
+     * @return
+     */
+    SkuInfo getSkuInfo(Long skuId);
+
+    /**
+     * 根据category3Id 查询视图所有信息
+     * @param category3Id
+     * @return
+     */
+    BaseCategoryView getCategoryView(Long category3Id);
+
+    /**
+     * 根据skuId查询skuInfo中的价格
+     * @param skuId
+     * @return
+     */
+    BigDecimal getSkuPrice(Long skuId);
+
+    /**
+     * 先根据spuId 查询spu商品的销售属性和销售属性值， 再根据skuId查询sku商品对应的销售属性值
+     * @param skuId
+     * @param spuId
+     * @return
+     */
+    List<SpuSaleAttr> getSpuSaleAttrListCheckBySku(Long skuId, Long spuId);
+
+    /**
+     * 根据spuId 查询同一个spu下的sku所有销售属性值 然后把sku的销售属性值id组合   spuId =25 {"106|110":40,"107|110":41}
+     * @param spuId
+     * @return
+     */
+    Map<Object, Object> getSkuValueIdsMap(Long spuId);
 }

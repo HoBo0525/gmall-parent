@@ -11,7 +11,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
+import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author Hobo
@@ -47,6 +50,8 @@ public class ManageServiceImpl implements ManageService {
     SkuAttrValueMapper skuAttrValueMapper;
     @Autowired
     SkuSaleAttrValueMapper skuSaleAttrValueMapper;
+    @Autowired
+    BaseCategoryViewMapper baseCategoryViewMapper;
 
 
 
@@ -250,6 +255,7 @@ public class ManageServiceImpl implements ManageService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void onSale(Long skuId) {
         SkuInfo skuInfo = skuInfoMapper.selectById(skuId);
         skuInfo.setIsSale(1);
@@ -257,10 +263,59 @@ public class ManageServiceImpl implements ManageService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void cancelSale(Long skuId) {
         SkuInfo skuInfo = skuInfoMapper.selectById(skuId);
         skuInfo.setIsSale(0);
         skuInfoMapper.updateById(skuInfo);
+    }
+
+    @Override
+    public SkuInfo getSkuInfo(Long skuId) {
+        SkuInfo skuInfo = skuInfoMapper.selectById(skuId);
+
+        QueryWrapper<SkuImage> skuImageQueryWrapper = new QueryWrapper<>();
+        skuImageQueryWrapper.eq("sku_id", skuId);
+        List<SkuImage> skuImageList = skuImageMapper.selectList(skuImageQueryWrapper);
+        skuInfo.setSkuImageList(skuImageList);
+
+        return skuInfo;
+    }
+
+    @Override
+    public BaseCategoryView getCategoryView(Long category3Id) {
+        BaseCategoryView baseCategoryView = baseCategoryViewMapper.selectById(category3Id);
+        return baseCategoryView;
+    }
+
+    @Override
+    public BigDecimal getSkuPrice(Long skuId) {
+        SkuInfo skuInfo = skuInfoMapper.selectById(skuId);
+        if (skuInfo != null){
+        BigDecimal price = skuInfo.getPrice();
+            return price;
+        }
+        return new BigDecimal(0);
+
+    }
+
+    @Override
+    public List<SpuSaleAttr> getSpuSaleAttrListCheckBySku(Long skuId, Long spuId) {
+        List<SpuSaleAttr> spuSaleAttrList = spuSaleAttrMapper.getSpuSaleAttrListCheckBySku(skuId, spuId);
+        return spuSaleAttrList;
+    }
+
+    @Override
+    public Map<Object, Object> getSkuValueIdsMap(Long spuId) {
+        Map<Object, Object> map = new HashMap<>();
+        List<Map> mapList = skuSaleAttrValueMapper.selectSaleAttrValuesBySpu(spuId);
+        if (mapList.size() != 0){
+            for (Map skuMap : mapList) {
+                map.put(skuMap.get("value_ids"), skuMap.get("sku_id"));
+            }
+        }
+        return map;
+
     }
 
 
