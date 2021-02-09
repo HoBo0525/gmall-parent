@@ -1,20 +1,25 @@
 package com.atguigu.gmall.product.service.impl;
 
+import com.alibaba.nacos.common.util.UuidUtils;
+import com.atguigu.gmall.common.constant.RedisConst;
 import com.atguigu.gmall.model.product.*;
 import com.atguigu.gmall.product.mapper.*;
 import com.atguigu.gmall.product.service.ManageService;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 import java.math.BigDecimal;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author Hobo
@@ -52,6 +57,10 @@ public class ManageServiceImpl implements ManageService {
     SkuSaleAttrValueMapper skuSaleAttrValueMapper;
     @Autowired
     BaseCategoryViewMapper baseCategoryViewMapper;
+    @Autowired
+    RedisTemplate redisTemplate;
+    @Autowired
+    RedissonClient redissonClient;
 
 
 
@@ -272,12 +281,61 @@ public class ManageServiceImpl implements ManageService {
 
     @Override
     public SkuInfo getSkuInfo(Long skuId) {
+        SkuInfo skuInfo = null;
+        try {
+            //Redis中skuKey sku:skuId:info
+            String skuKey = RedisConst.SKUKEY_PREFIX + skuId + RedisConst.SKUKEY_SUFFIX;
+            //获取缓存
+            skuInfo = (SkuInfo) redisTemplate.opsForValue().get(skuKey);
+            if (skuInfo == null){
+                //没有获取到缓存 从数据库获取
+                //上锁
+                String lockKey = RedisConst.SKUKEY_PREFIX + skuId + RedisConst.SKULOCK_SUFFIX;
+                RLock lock = redissonClient.getLock(lockKey);
+                boolean flag = lock.tryLock(RedisConst.SKULOCK_EXPIRE_PX1, TimeUnit.SECONDS);
+                if (flag){
+                    try {
+                        //从数据库获取
+                        skuInfo = getSkuInfoDB(skuId);
+                        if (skuInfo == null){
+                            //避免缓存穿透 给一个Redis null
+                            SkuInfo skuInfoNull = new SkuInfo();
+                            redisTemplate.opsForValue().set(skuKey, skuInfoNull, RedisConst.SKUKEY_TEMPORARY_TIMEOUT, TimeUnit.SECONDS);
+                            return skuInfoNull;
+                        }
+                        //从数据库获取到了数据给缓存
+                        redisTemplate.opsForValue().set(skuKey, skuInfo, RedisConst.SKUKEY_TIMEOUT, TimeUnit.SECONDS);
+                        return skuInfo;
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }finally {
+                        lock.unlock();
+                    }
+                }else {
+                    //其他线程等待 回旋
+                   Thread.sleep(1000);
+                    getSkuInfo(skuId);
+                }
+            }else {
+                //获取到缓存 直接返回
+                return skuInfo;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        //兜底
+        return getSkuInfoDB(skuId);
+    }
+
+    private SkuInfo getSkuInfoDB(Long skuId) {
         SkuInfo skuInfo = skuInfoMapper.selectById(skuId);
 
+        if (skuInfo != null){
         QueryWrapper<SkuImage> skuImageQueryWrapper = new QueryWrapper<>();
         skuImageQueryWrapper.eq("sku_id", skuId);
         List<SkuImage> skuImageList = skuImageMapper.selectList(skuImageQueryWrapper);
         skuInfo.setSkuImageList(skuImageList);
+        }
 
         return skuInfo;
     }
