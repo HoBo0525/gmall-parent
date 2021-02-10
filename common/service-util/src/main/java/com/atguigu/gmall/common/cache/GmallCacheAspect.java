@@ -12,109 +12,93 @@ import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
 
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @author mqx
- * 处理环绕通知
- * @date 2020-11-11 09:30:29
+ * @author Hobo
+ * @create 2021-02-09 21:21
  */
 @Component
 @Aspect
 public class GmallCacheAspect {
 
     @Autowired
-    private RedisTemplate redisTemplate;
+    RedisTemplate redisTemplate;
 
     @Autowired
-    private RedissonClient redissonClient;
+    RedissonClient redissonClient;
 
-    //  切GmallCache注解
     @SneakyThrows
     @Around("@annotation(com.atguigu.gmall.common.cache.GmallCache)")
     public Object cacheAroundAdvice(ProceedingJoinPoint joinPoint){
-        //  声明一个对象
+        //声明一个对象
         Object object = new Object();
-        //  在环绕通知中处理业务逻辑 {实现分布式锁}
-        //  获取到注解，注解使用在方法上！
+
+        //在环绕通知中处理业务逻辑、 获取注解 注解使用在方法上
         MethodSignature signature = (MethodSignature) joinPoint.getSignature();
         GmallCache gmallCache = signature.getMethod().getAnnotation(GmallCache.class);
-        //  获取到注解上的前缀
-        String prefix = gmallCache.prefix(); // sku
-        //  方法传入的参数
+        //获取注解前缀
+        String prefix = gmallCache.prefix();
+        //注解使用在方法上的参数
         Object[] args = joinPoint.getArgs();
-        //  组成缓存的key 需要前缀+方法传入的参数
-        String key = prefix+ Arrays.asList(args).toString();
-        //  防止redis ，redisson 出现问题！
-        try {
-            //  从缓存中获取数据
-            //  类似于skuInfo = (SkuInfo) redisTemplate.opsForValue().get(skuKey);
-            object = cacheHit(key,signature);
-            //  判断缓存中的数据是否为空！
-            if (object==null){
-                //  从数据库中获取数据，并放入缓存，防止缓存击穿必须上锁
-                //  perfix = sku  index1 skuId = 32 , index2 skuId = 33
-                //  public SkuInfo getSkuInfo(Long skuId)
-                //  key+":lock"
-                String lockKey = prefix + ":lock";
-                //  准备上锁
-                RLock lock = redissonClient.getLock(lockKey);
-                boolean result = lock.tryLock(RedisConst.SKULOCK_EXPIRE_PX1, RedisConst.SKULOCK_EXPIRE_PX2, TimeUnit.SECONDS);
-                //  上锁成功
-                if (result){
-                    try {
-                        //  表示执行方法体 getSkuInfoDB(skuId);
-                        object = joinPoint.proceed(joinPoint.getArgs());
-                        //  判断object 是否为空
-                        if (object==null){
-                            //  防止缓存穿透
-                            Object object1 = new Object();
-                            redisTemplate.opsForValue().set(key, JSON.toJSONString(object1),RedisConst.SKUKEY_TEMPORARY_TIMEOUT,TimeUnit.SECONDS);
-                            //  返回数据
-                            return object1;
-                        }
-                        //  放入缓存
-                        redisTemplate.opsForValue().set(key, JSON.toJSONString(object),RedisConst.SKUKEY_TIMEOUT,TimeUnit.SECONDS);
+        //组成缓存的key
+        String key = prefix + Arrays.asList(args).toString();
 
-                        //  返回数据
+        try {
+            //从redis获取数据
+            object = cacheHit(key, signature);
+            //无缓存
+            if (object == null){
+                //上锁
+                String lockKey = prefix + ":lock";
+                RLock lock = redissonClient.getLock(lockKey);
+                boolean flag = lock.tryLock(RedisConst.SKULOCK_EXPIRE_PX1, RedisConst.SKULOCK_EXPIRE_PX2, TimeUnit.SECONDS);
+                if (flag){
+                    try {
+                        //执行方法体
+                        object = joinPoint.proceed(joinPoint.getArgs());
+                        if (object == null){    //防止缓存穿透
+                            Object objectNull = new Object();
+                            redisTemplate.opsForValue().set(key, JSON.toJSONString(objectNull),RedisConst.SKUKEY_TEMPORARY_TIMEOUT, TimeUnit.SECONDS);
+                            return objectNull;
+                        }
+                        redisTemplate.opsForValue().set(key, JSON.toJSONString(object),RedisConst.SKUKEY_TIMEOUT, TimeUnit.SECONDS);
                         return object;
                     } finally {
+                        //解锁
                         lock.unlock();
                     }
-                }else{
-                    //  上锁失败,睡眠自旋
-                    Thread.sleep(1000);
+
+                }else {
+                    //自旋
+                    Thread.sleep(100);
                     return cacheAroundAdvice(joinPoint);
-                    //  理想状态
-                    //  return cacheHit(key, signature);
                 }
+
             }else {
+                //从redis获取数据
                 return object;
             }
         } catch (Throwable throwable) {
             throwable.printStackTrace();
         }
-        //  如果出现问题数据库兜底
+        //数据库保底
         return joinPoint.proceed(joinPoint.getArgs());
+
     }
-    /**
-     *  表示从缓存中获取数据
-     * @param key 缓存的key
-     * @param signature 获取方法的返回值类型
-     * @return
-     */
+
+
     private Object cacheHit(String key, MethodSignature signature) {
-        //  通过key 来获取缓存的数据
+        //通过key   获取数据
         String strJson = (String) redisTemplate.opsForValue().get(key);
-        //  表示从缓存中获取到了数据
-        if (!StringUtils.isEmpty(strJson)){
-            //  字符串存储的数据是什么?   就是方法的返回值类型
+        if (strJson != null){
+            //获取使用注解方法的返回值类型
             Class returnType = signature.getReturnType();
-            //  将字符串变为当前的返回值类型
-            return JSON.parseObject(strJson,returnType);
+            //把redis获取的str 转化为使用注解方法的返回值类型
+            Object object = JSON.parseObject(strJson, returnType);
+            return object;
         }
         return null;
     }
