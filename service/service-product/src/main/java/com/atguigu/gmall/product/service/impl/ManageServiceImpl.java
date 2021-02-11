@@ -64,6 +64,8 @@ public class ManageServiceImpl implements ManageService {
     RedisTemplate redisTemplate;
     @Autowired
     RedissonClient redissonClient;
+    @Autowired
+    BaseTrademarkMapper baseTrademarkMapper;
 
 
 
@@ -459,6 +461,18 @@ public class ManageServiceImpl implements ManageService {
         }
 
         return list;
+    }
+
+    @Override
+    public BaseTrademark getTrademarkByTmId(Long tmId) {
+        BaseTrademark baseTrademark = baseTrademarkMapper.selectById(tmId);
+        return baseTrademark;
+    }
+
+    @Override
+    public List<BaseAttrInfo> getAttrList(Long skuId) {
+        List<BaseAttrInfo> baseAttrInfoList = baseAttrInfoMapper.selectBaseAttrInfoListBySkuId(skuId);
+        return baseAttrInfoList;
     }
 
 
