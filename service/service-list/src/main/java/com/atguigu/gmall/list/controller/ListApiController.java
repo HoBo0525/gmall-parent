@@ -3,12 +3,13 @@ package com.atguigu.gmall.list.controller;
 import com.atguigu.gmall.common.result.Result;
 import com.atguigu.gmall.list.service.SearchService;
 import com.atguigu.gmall.model.list.Goods;
+import com.atguigu.gmall.model.list.SearchParam;
+import com.atguigu.gmall.model.list.SearchResponseVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.elasticsearch.core.ElasticsearchRestTemplate;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.io.IOException;
 
 /**
  * @author Hobo
@@ -54,5 +55,12 @@ public class ListApiController {
     public Result incrHotScore(@PathVariable Long skuId){
         searchService.incrHotScore(skuId);
         return Result.ok();
+    }
+
+    //索引商品
+    @PostMapping
+    public Result list(@RequestBody SearchParam searchParam) throws IOException {
+        SearchResponseVo search = searchService.search(searchParam);
+        return Result.ok(search);
     }
 }

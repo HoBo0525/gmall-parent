@@ -20,11 +20,10 @@ public class SearchParam {
     private String order = ""; // 1：综合排序/热点  2：价格
 
     //props=23:4G:运行内存
-    //平台属性Id 平台属性名，平台属性值名称
+    //平台属性Id 平台属性值名称 平台属性名
     private String[] props;//页面提交的数组
 
     private Integer pageNo = 1;//分页信息
     private Integer pageSize = 3;
-
 
 }
