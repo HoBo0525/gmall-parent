@@ -3,6 +3,12 @@ server:
 spring:
   application:
     name: api-gateway
+  redis:
+    host: 192.168.200.128
+    port: 6379
+    database: 0
+    timeout: 1800000
+    password:
   cloud:
     nacos:
       discovery:
@@ -20,6 +26,10 @@ spring:
           uri: lb://service-item
           predicates:
             - Path=/*/item/**
+        - id: service-user
+          uri: lb://service-user
+          predicates:
+            - Path=/*/user/**
 #==================web前端==========================
         - id: web-item
           uri: lb://web-all
@@ -29,10 +39,18 @@ spring:
           uri: lb://web-all
           predicates:
             - Host=list.gmall.com
+        - id: web-passport
+          uri: lb://web-all
+          predicates:
+            - Host=passport.gmall.com
 #==================首页前端==========================
         - id: web-index
           uri: lb://web-all
           predicates:
             - Host=www.gmall.com
+
+# 匹配路径规则 软解码
+authUrls:
+  url: trade.html,myOrder.html,list.html
 
 

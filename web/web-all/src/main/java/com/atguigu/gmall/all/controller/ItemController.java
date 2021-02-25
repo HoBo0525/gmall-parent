@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * 商品详情接口
  * @author Hobo
  * @create 2021-02-04 23:03
  */
