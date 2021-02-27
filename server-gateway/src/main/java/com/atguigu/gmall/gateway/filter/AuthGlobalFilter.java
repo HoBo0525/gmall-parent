@@ -37,7 +37,7 @@ public class AuthGlobalFilter implements GlobalFilter {
 
     //获取匹配路径规则的Url
     @Value("${authUrls.url}")
-    private String authUrlUrls;     //trade.html,myOrder.html,list.html
+    private String authUrlUrls;     //trade.html,myOrder.html
 
     //匹配路径的工具类
     AntPathMatcher antPathMatcher = new AntPathMatcher();
@@ -55,7 +55,9 @@ public class AuthGlobalFilter implements GlobalFilter {
         //获取请求对象的Url地址
         String path = request.getURI().getPath();
         //获取用户Id
-        String userId = getUserId(request);
+        String userId = this.getUserId(request);
+        //获取临时用户Id
+        String userTempId = this.getUserTempId(request);
 
         //token与缓存的ip不一致
         if ("-1".equals(userId)){
@@ -92,14 +94,40 @@ public class AuthGlobalFilter implements GlobalFilter {
             }
         }
 
-        //将userId传输给 网关后面的微服务
-        if (!StringUtils.isEmpty(userId)){
-            request.mutate().header("userId", userId).build();
+        if (!StringUtils.isEmpty(userId) || !StringUtils.isEmpty(userTempId)){
+            //将userId传输给 网关后面的微服务
+            if (!StringUtils.isEmpty(userId)){
+                request.mutate().header("userId", userId).build();
+            }
+            if (!StringUtils.isEmpty(userTempId)){
+                request.mutate().header("userTempId", userTempId).build();
+            }
             ServerWebExchange build = exchange.mutate().request(request).build();
             return chain.filter(build);
         }
 
+
+
         return chain.filter(exchange);
+    }
+
+    private String getUserTempId(ServerHttpRequest request) {
+        //定义临时Id
+        String userTempId = "";
+        //从Header获取临时id
+        List<String> tokenList = request.getHeaders().get("userTempId");
+        if (tokenList != null){
+            userTempId = tokenList.get(0);
+        }else {
+            //从cookie中获取
+            MultiValueMap<String, HttpCookie> cookies = request.getCookies();
+            HttpCookie cookie = cookies.getFirst("userTempId");
+            if (cookie != null){
+                userTempId = cookie.getValue();
+            }
+        }
+
+        return userTempId;
     }
 
     /**

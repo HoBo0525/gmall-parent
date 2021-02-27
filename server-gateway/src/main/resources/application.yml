@@ -51,6 +51,6 @@ spring:
 
 # 匹配路径规则 软解码
 authUrls:
-  url: trade.html,myOrder.html,list.html
+  url: trade.html,myOrder.html
 
 
