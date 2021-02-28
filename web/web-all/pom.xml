@@ -34,8 +34,13 @@
             <artifactId>service-list-client</artifactId>
             <version>1.0</version>
         </dependency>
-    </dependencies>
 
+        <dependency>
+            <groupId>com.atguigu.gmall</groupId>
+            <artifactId>service-cart-client</artifactId>
+            <version>1.0</version>
+        </dependency>
+    </dependencies>
 
     <build>
         <finalName>web-all</finalName>

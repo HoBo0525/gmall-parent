@@ -34,4 +34,13 @@ public interface CartInfoService {
      */
     List<CartInfo> getCartList(String userId);
 
+    /**
+     * 修改购物车商品选中状态
+     */
+    void checkCart(String userId, Integer isChecked, Long skuId);
+
+    /**
+     * 删除购物车商品
+     */
+    void deleteCart(Long skuId, String userId);
 }

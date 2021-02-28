@@ -43,4 +43,26 @@ public class CartApiController {
         return Result.ok(cartList);
 
     }
+
+    @GetMapping("checkCart/{skuId}/{isChecked}")
+    public Result checkCart(@PathVariable Long skuId,
+                            @PathVariable Integer isChecked,
+                            HttpServletRequest request){
+        String userId = AuthContextHolder.getUserId(request);
+        if (StringUtils.isEmpty(userId)){
+            userId = AuthContextHolder.getUserTempId(request);
+        }
+        cartInfoService.checkCart(userId, isChecked, skuId);
+        return Result.ok();
+    }
+
+    @DeleteMapping("deleteCart/{skuId}")
+    public Result deleteCart(@PathVariable Long skuId, HttpServletRequest request){
+        String userId = AuthContextHolder.getUserId(request);
+        if (StringUtils.isEmpty(userId)){
+            userId = AuthContextHolder.getUserTempId(request);
+        }
+        cartInfoService.deleteCart(skuId, userId);
+        return  Result.ok();
+    }
 }
