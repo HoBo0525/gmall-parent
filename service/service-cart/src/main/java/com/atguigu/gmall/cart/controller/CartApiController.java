@@ -65,4 +65,17 @@ public class CartApiController {
         cartInfoService.deleteCart(skuId, userId);
         return  Result.ok();
     }
+
+    @GetMapping("getCartCheckedList/{userId}")
+    public List<CartInfo> getCartCheckedList(@PathVariable String userId){
+        List<CartInfo> cartCheckedList = cartInfoService.getCartCheckedList(userId);
+        return cartCheckedList;
+    }
+
+    @GetMapping("loadCartCache/{userId}")
+    public Result loadCartCache(@PathVariable("userId") String userId) {
+        cartInfoService.loadCartCache(userId);
+        return Result.ok();
+    }
+
 }

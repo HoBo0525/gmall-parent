@@ -249,12 +249,31 @@ public class CartInfoServiceImpl implements CartInfoService {
         redisTemplate.opsForHash().delete(cartKey, skuId.toString());
     }
 
+    @Override
+    public List<CartInfo> getCartCheckedList(String userId) {
+        List<CartInfo> cartInfoList = new ArrayList<>();
+
+        //从缓存中得到
+        String cartKey = this.getCartKey(userId);
+        List<CartInfo> cartCatchInfoList = redisTemplate.opsForHash().values(cartKey);
+        if (!CollectionUtils.isEmpty(cartCatchInfoList) && cartCatchInfoList.size() > 0){
+            for (CartInfo cartInfo : cartCatchInfoList) {
+                if (cartInfo.getIsChecked() == 1){
+                    cartInfoList.add(cartInfo);
+                }
+            }
+        }
+
+        return cartInfoList;
+    }
+
     /**
      * 通过userId 从数据库获取购物车信息
      * @param userId
      * @return
      */
-    private List<CartInfo> loadCartCache(String userId) {
+    @Override
+    public List<CartInfo> loadCartCache(String userId) {
         QueryWrapper<CartInfo> cartInfoQueryWrapper = new QueryWrapper<>();
         cartInfoQueryWrapper.eq("user_id", userId);
         List<CartInfo> cartInfoList = cartInfoMapper.selectList(cartInfoQueryWrapper);

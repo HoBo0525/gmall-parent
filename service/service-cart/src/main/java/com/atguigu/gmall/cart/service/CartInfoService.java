@@ -43,4 +43,14 @@ public interface CartInfoService {
      * 删除购物车商品
      */
     void deleteCart(Long skuId, String userId);
+
+    /**
+     * 根据用户Id 得到购物车选中的商品信息
+     */
+    List<CartInfo> getCartCheckedList(String userId);
+
+    /**
+     * 更新商品实时价格 并存入缓存
+     */
+    List<CartInfo> loadCartCache(String userId);
 }
